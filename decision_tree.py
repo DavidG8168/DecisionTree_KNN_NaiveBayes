@@ -235,22 +235,41 @@ class Tree(object):
     # Gets the example to predict and the root of the tree as params.
     # Returns the node with the correct classification.
     def predict(self, example_to_predict, tree_root):
-        # Get current node.
+        # Get the current node.
         current_node = TreeNode(tree_root.node_depth, tree_root.leaf, tree_root.child_nodes, tree_root.feature,
                                 tree_root.classification_default)
-        # If it's a leaf return default classification.
+        # If the current node is a leaf return the default classification.
         if current_node.leaf:
             return current_node.classification_default
-        # Otherwise for every child node.
+        item_found = False
+        # Otherwise iterate the child nodes.
         for node in current_node.child_nodes:
-            # Go along the tree and update the current node.
+            # Go along the decision tree and update the current node.
             value = node[utility.feature_value]
             index = self.find_feature_index(current_node.feature, example_to_predict)
-            if node[utility.feature_name] == example_to_predict[index][1]:
+            if node[utility.feature_name] == example_to_predict[index][utility.feature_value]:
                 current_node = value
+                item_found = True
                 break
         # Return the result recursively.
-        return self.predict(example_to_predict, current_node)
+        if item_found:
+            return self.predict(example_to_predict, current_node)
+        # Otherwise classify based on majority.
+        else:
+            # Counters.
+            positive_classification = 0
+            negative_classification = 0
+            # Count the positive and negative classifications of the child nodes.
+            for node in current_node.child_nodes:
+                if node[utility.feature_name].is_leaf and node[utility.feature_name].default == "yes":
+                    positive_classification += 1
+                elif node[utility.feature_name].is_leaf and node[utility.feature_name].default == "no":
+                    negative_classification += 1
+            # Return based on majority.
+            if positive_classification >= negative_classification:
+                return "yes"
+            if positive_classification < negative_classification:
+                return "no"
 
     # *****************************************************************************************************************
     # Find the index of a certain feature in an example.
